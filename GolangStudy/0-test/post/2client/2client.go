@@ -2,44 +2,49 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
+	"runtime"
+	"sync"
 )
 
-func client(a string) {
-	url := "http://192.168.142.128:9090/post"
-	// 表单数据
-	//contentType := "application/x-www-form-urlencoded"
-	//data := "name=小王子&age=18"
-	// json
-	contentType := "application/json"
-	data := a
+var (
+	// counter是所有goroutine都要增加其值的变量
+	counter int
 
-	resp, err := http.Post(url, contentType, strings.NewReader(data))
-	if err != nil {
-		fmt.Printf("post failed, err:%v\n", err)
-		return
-	}
-	defer resp.Body.Close()
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("get resp failed, err:%v\n", err)
-		return
-	}
-	fmt.Println(string(b))
+	// wg用来等待程序结束
+	wg sync.WaitGroup
+)
 
+// main是所有Go程序的入口
+func main() {
+	runtime.GOMAXPROCS(1)
+	// 计数加2，表示要等待两个goroutine
+	wg.Add(2)
+
+	// 创建两个goroutine
+	go incCounter(1)
+	go incCounter(2)
+
+	// 等待goroutine结束
+	wg.Wait()
+	fmt.Println("Final Counter:", counter)
 }
 
-func main() {
-	go client("21")
-	go client("22")
-	go client("23")
-	go client("24")
-	go client("25")
+// incCounter增加包里counter变量的值
+func incCounter(id int) {
+	// 在函数退出时调用Done来通知main函数工作已经完成
+	defer wg.Done()
 
-	for {
+	for count := 0; count < 2; count++ {
+		// 捕获counter的值
+		value := counter
 
+		// 当前goroutine从线程退出，并放回到队列
+		runtime.Gosched()
+
+		// 增加本地value变量的值
+		value++
+
+		// 将该值保存回counter
+		counter = value
 	}
-
 }

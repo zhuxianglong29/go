@@ -34,7 +34,7 @@ func insertsql() {
 
 	fmt.Printf("db: %v\n", db)
 	sqlStr := "insert into testdata(id,data) values (?,?)"
-	r, err := db.Exec(sqlStr, "1", 2)
+	r, err := db.Exec(sqlStr, "99", 99)
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		return

@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var lock sync.RWMutex
 
 var a int = 0
 
@@ -21,13 +24,15 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("read request.Body failed, err:%v\n", err)
 		return
 	}
-	fmt.Println(string(b))
+	fmt.Println("b=", string(b))
+	lock.Lock()
 	for i := 0; i < 5; i++ {
 		a = a + 1
-		time.Sleep(time.Second * 10)
+		fmt.Println(string(b), "of for(a)=", a)
+		time.Sleep(time.Second)
 	}
-	fmt.Println(a)
-
+	fmt.Println(string(b), "of a=", a)
+	lock.Unlock()
 	answer := `{"status": "ok"}`
 	w.Write([]byte(answer))
 }

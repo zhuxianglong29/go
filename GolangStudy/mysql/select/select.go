@@ -7,6 +7,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -31,42 +32,41 @@ func initDB() (err error) {
 }
 
 type user struct {
-	id       int
-	username string
-	password string
-	status   int
+	id   int
+	data int
 }
 
 func queryRowData() {
-	sqlStr := "select Id,username,password,status from user_tb1 where id=?"
+	sqlStr := "select Id from testdata where id=?"
 	var u user
-	err := db.QueryRow(sqlStr, 1).Scan(&u.id, &u.username, &u.password, &u.status) //1表示查询id=1
+	err := db.QueryRow(sqlStr, 1).Scan(&u.id, &u.data) //1表示查询id=1
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		return
 	}
-	fmt.Printf("Id:%d username:%v password:%v status:%d", u.id, u.username, u.password, u.status)
+	fmt.Printf("Id:%d data:%v ", u.id, u.data)
+	time.Sleep(time.Second * 30)
 }
 
-func queryManyData() {
-	sqlStr := "select Id,username,password,status from user_tb1 where status > ?" //>?  <?  或不给参数全查询
-	r, err := db.Query(sqlStr, 0)
-	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		return
-	}
-	defer r.Close()
-	// 循环读取结果集中的数据
-	for r.Next() {
-		var u user
-		err2 := r.Scan(&u.id, &u.username, &u.password, &u.status)
-		if err2 != nil {
-			fmt.Printf("err2: %v\n", err2)
-			return
-		}
-		fmt.Printf("Id:%d username:%v password:%v status:%d\n", u.id, u.username, u.password, u.status)
-	}
-}
+// func queryManyData() {
+// 	sqlStr := "select Id,username,password,status from user_tb1 where status > ?" //>?  <?  或不给参数全查询
+// 	r, err := db.Query(sqlStr, 0)
+// 	if err != nil {
+// 		fmt.Printf("err: %v\n", err)
+// 		return
+// 	}
+// 	defer r.Close()
+// 	// 循环读取结果集中的数据
+// 	for r.Next() {
+// 		var u user
+// 		err2 := r.Scan(&u.id, &u.username, &u.password, &u.status)
+// 		if err2 != nil {
+// 			fmt.Printf("err2: %v\n", err2)
+// 			return
+// 		}
+// 		fmt.Printf("Id:%d username:%v password:%v status:%d\n", u.id, u.username, u.password, u.status)
+// 	}
+// }
 
 func main() {
 	err := initDB()
@@ -76,6 +76,6 @@ func main() {
 		fmt.Println("连接成功")
 	}
 	fmt.Printf("db: %v\n", db)
-	//queryRowData()
-	queryManyData()
+	queryRowData()
+	//queryManyData()
 }

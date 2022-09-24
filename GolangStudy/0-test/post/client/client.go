@@ -9,7 +9,7 @@ import (
 )
 
 func client(a string) {
-	url := "http://192.168.142.128:9090/post"
+	url := "http://192.168.1.96:9090/post"
 	// 表单数据
 	//contentType := "application/x-www-form-urlencoded"
 	//data := "name=小王子&age=18"
