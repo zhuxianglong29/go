@@ -3,6 +3,6 @@ version="0.1"
 [server]
 user="root"
 passkey="666666"
-mysql_addr="192.168.142.128:3306"
+mysql_addr="192.168.0.181:3306"
 database_name="godata"
 server_listen_port=":8080"

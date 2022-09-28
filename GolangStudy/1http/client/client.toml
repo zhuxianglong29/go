@@ -1,7 +1,7 @@
 os="windows"
 version="0.1"
 [server]
-modbustcp_slave="192.168.142.1"
+modbustcp_host="192.168.1.48"
 modbustcp_port=":502"
-httpserver_host="http://192.168.142.1"
+httpserver_host="http://192.168.0.181"
 httpserver_port="8080"

@@ -1,0 +1,8 @@
+time="2022-09-25T17:35:43+08:00" level=info msg="modbus starting"
+time="2022-09-25T17:35:43+08:00" level=info msg="[1 2 3 4 5]"
+time="2022-09-25T17:35:43+08:00" level=info msg="datamodbus %v\r\nmap[0:1 1:2 2:3 3:4 4:5]"
+time="2022-09-25T17:35:43+08:00" level=info msg="json: {\"0\":1,\"1\":2,\"2\":3,\"3\":4,\"4\":5}"
+time="2022-09-25T17:35:43+08:00" level=info msg="[123 34 48 34 58 49 44 34 49 34 58 50 44 34 50 34 58 51 44 34 51 34 58 52 44 34 52 34 58 53 125]"
+time="2022-09-25T17:35:44+08:00" level=info
+time="2022-09-25T17:37:44+08:00" level=info msg="sigal return=interrupt"
+EOF"

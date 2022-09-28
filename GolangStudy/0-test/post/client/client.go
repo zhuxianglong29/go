@@ -28,6 +28,7 @@ func client(a string) {
 		fmt.Printf("get resp failed, err:%v\n", err)
 		return
 	}
+
 	fmt.Println(string(b))
 
 }
