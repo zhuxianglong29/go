@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/sirupsen/logrus"
-	modbus "github.com/thinkgos/gomodbus/v2"
 )
 
 // 配置参数
@@ -48,42 +48,20 @@ type (
 @param out 管道，输入给数据
 @retvar 无
 */
-func mbus(modbustcp_host string, modbustcp_port string, out chan<- []byte) {
+func mbus(out chan<- []byte) {
 
-	//p := modbus.NewTCPClientProvider(modbustcp_slave+modbustcp_port, modbus.WithEnableLogger())
-	p := modbus.NewTCPClientProvider(fmt.Sprint(modbustcp_host, modbustcp_port), modbus.WithEnableLogger())
-	client := modbus.NewClient(p)
-	err := client.Connect()
-	if err != nil {
-		logrus.Error("connect failed, ", err)
-		return
-	}
-	defer client.Close()
-
-	logrus.Info("modbus starting")
-
-	a, err := client.ReadHoldingRegisters(1, 0, 5) //从机编号,地址，数据量
-	if err != nil {
-		logrus.Error(err.Error())
-
-	}
-	logrus.Info(a)
-	//转map
+	a := []uint16{1, 2, 3, 4, 5}
+	//datamodbus := make(map[string]uint16)
 	datamodbus := make(map[string]uint16)
 	for index, value := range a {
 		str := strconv.Itoa(index)
 		datamodbus[str] = value
 	}
-	logrus.Info("datamodbus %v\r\n", datamodbus)
-	// json marshal
-	json_datamodbus, err := json.Marshal(datamodbus)
-	if err != nil {
-		logrus.Panic("json err=", err)
 
-	}
-	logrus.Infoln("json:", string(json_datamodbus))
+	// json marshal
+	json_datamodbus, _ := json.Marshal(datamodbus)
 	out <- json_datamodbus
-	time.Sleep(time.Second)
+
 }
 
 /*
@@ -103,7 +81,21 @@ func myclient(httpserver_host string, httpserver_port string, in <-chan []byte) 
 		//url := httpserver_host + ":" + httpserver_port + "/products/"
 		url := fmt.Sprint(httpserver_host, ":", httpserver_port, "/products/")
 		contentType := "application/json"
-		client := http.Client{Timeout: 5 * time.Second}
+		//client := http.Client{Timeout: 5 * time.Second}
+		client := &http.Client{
+			Timeout: time.Second * 10,
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   1000 * time.Second,
+					KeepAlive: 100 * time.Second,
+					DualStack: true,
+				}).DialContext,
+				MaxIdleConns:          1000,
+				IdleConnTimeout:       1000 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 10 * time.Second,
+			},
+		}
 		resp, err := client.Post(url, contentType, bytes.NewBuffer(json_datemodbus))
 
 		if err != nil {
@@ -128,7 +120,7 @@ func main() {
 	if _, err := toml.DecodeFile(filePath, &tomlconfig); err != nil {
 		panic(err)
 	}
-	fmt.Println(tomlconfig)
+	//fmt.Println(tomlconfig)
 	modbustcp_host = tomlconfig.Server.Modbustcp_host
 	modbustcp_port = tomlconfig.Server.Modbustcp_port
 	httpserver_host = tomlconfig.Server.Httpserver_host
@@ -142,10 +134,23 @@ func main() {
 	}
 	logrus.SetOutput(io.MultiWriter(Stdout_writer, log_writer))
 
-	c := make(chan []byte)
-	go mbus(modbustcp_host, modbustcp_port, c)
-	go myclient(httpserver_host, httpserver_port, c)
+	for i := 0; i < 100; i++ {
 
+		i := make(chan []byte)
+
+		go mbus(i)
+		go myclient(httpserver_host, httpserver_port, i)
+	}
+	//}
+	// i := make(chan []byte)
+	// go mbus(modbustcp_host, modbustcp_port, i)
+	// go myclient(httpserver_host, httpserver_port, i)
+	// a := make(chan []byte)
+	// go mbus(modbustcp_host, modbustcp_port, a)
+	// go myclient(httpserver_host, httpserver_port, a)
+	// b := make(chan []byte)
+	// go mbus(modbustcp_host, modbustcp_port, b)
+	// go myclient(httpserver_host, httpserver_port, b)
 	//ctrl+c退出
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt)

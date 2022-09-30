@@ -195,8 +195,9 @@ func mysql_transaction(a string, b uint16) {
 	}
 	err = tx.Commit()
 	if err != nil {
-		logrus.Panic("提交错误，需要回滚！")
-		tx.Rollback()
+		//logrus.Panic("提交错误，需要回滚！")
+		fmt.Println("提交错误，需要回滚！")
+		//tx.Rollback()
 	}
 	logrus.Info("transaction success")
 
@@ -226,6 +227,7 @@ func myserve(server_listen_port string) {
 
 // products路由对应函数
 func ProductsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	w.WriteHeader(http.StatusOK)
 	logrus.Info(w, "%s", "products")
 	b, _ := io.ReadAll(r.Body)
@@ -255,6 +257,7 @@ func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 		mysql_transaction(string(key), cmd[key])
 		//insertsql(string(key), cmd[key])
 	}
+
 }
 
 // func UserHandler(w http.ResponseWriter, r *http.Request) {

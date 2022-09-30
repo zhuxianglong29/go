@@ -1,55 +1,77 @@
-/*
- */
 package main
 
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"os/signal"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/sirupsen/logrus"
 )
 
-// 定义一个全局对象db
-var db *sql.DB
+var tx *sql.Tx
 
-func initDB() (err error) {
-	// dsn := "root:root(密码)@tcp(127.0.0.1:3306（连接地址)）/go_db（数据库名）?charset=utf8mb4&parseTime=True"
-	dsn := "zxl:666666@tcp(192.168.1.48:3306)/godata?charset=utf8mb4"
-	// open函数只是验证格式是否正确，并不是创建数据库连接
-	db, err = sql.Open("mysql", dsn)
+func delData(a int) error {
+	strSql := "delete from testdata1 where id = ?"
+	r, err := tx.Exec(strSql, a)
 	if err != nil {
+		fmt.Printf("err: %v\n", err)
 		return err
+	}
+	i2, err2 := r.RowsAffected()
+	if err2 != nil {
+		fmt.Printf("err2: %v\n", err2)
+		return err2
+	}
+	fmt.Printf("i2: %v\n", i2)
+	return nil
+}
+
+func mysql_transaction(a int) {
+	//time.Sleep(time.Second * 60)//超时推出测试
+	// dsn := "root:root(密码)@tcp(127.0.0.1:3306（连接地址)）/go_db（数据库名）?charset=utf8mb4&parseTime=True"
+	//dsn := fmt.Sprint(user, ":", passkey, "@tcp(", mysql_addr, ")/", database_name, "?charset=utf8mb4")
+	dsn := "root:666666@tcp(192.168.0.181:3306)/godata?charset=utf8mb4"
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		logrus.Panic(err)
 	}
 	// 与数据库建立连接
 	err2 := db.Ping()
 	if err2 != nil {
-		return err2
+		logrus.Panic(err2)
 	}
-	return nil
-}
-
-func delData() {
-	strSql := "delete from user_tb1 where Id = ?"
-	r, err := db.Exec(strSql, 1)
+	logrus.Info("连接成功")
+	//开启事务
+	tx, err = db.Begin()
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		return
+		if tx != nil {
+			tx.Rollback()
+		}
+		logrus.Panic("tx start err :", err)
 	}
-	i2, err2 := r.RowsAffected()
-	if err != nil {
-		fmt.Printf("err2: %v\n", err2)
-		return
-	}
-	fmt.Printf("i2: %v\n", i2)
-}
 
+	err_part := delData(a)
+	if err_part != nil {
+		tx.Rollback()
+	}
+	err = tx.Commit()
+	if err != nil {
+		logrus.Panic("提交错误，需要回滚！")
+		tx.Rollback()
+	}
+	logrus.Info("transaction success")
+
+}
 func main() {
-	err := initDB()
-	if err != nil {
-		fmt.Printf("err: %v\n", err)
-	} else {
-		fmt.Println("连接成功")
-	}
-	fmt.Printf("db: %v\n", db)
-	delData()
+	go mysql_transaction(1)
+	//ctrl+c退出
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt)
+	/*SIGINT:os.Interrupt=ctrl+c  SIGTERM:kill函数产生: 相当于shell> kill不加-9时 pid
+	SIGKILL：相当于shell> kill -9 pid
+	*/
+	s := <-exit
+	logrus.Infoln("sigal return=", s)
 }

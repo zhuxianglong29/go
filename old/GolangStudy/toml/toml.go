@@ -2,25 +2,30 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 
-	"github.com/pelletier/go-toml"
+	"github.com/BurntSushi/toml"
+)
+
+type (
+	config struct {
+		Os      string
+		Version string
+		Server  server
+	}
+	server struct {
+		Addr  string
+		Port  string
+		Http  string
+		Route string
+	}
 )
 
 func main() {
-	config, _ := toml.LoadFile("./test.toml")
-	key := config.Get("os").(string)
-	addr := config.Get("server.addr").(string)
-	a := fmt.Sprint(key, addr)
-	fmt.Println(a)
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	/*SIGINT:os.Interrupt=ctrl+c  SIGTERM:kill函数产生: 相当于shell> kill不加-9时 pid
-	SIGKILL：相当于shell> kill -9 pid
-	*/
-	s := <-c
-	fmt.Println("sigal return=", s)
+	var tomlconfig config
+	filePath := "test.toml"
+	if _, err := toml.DecodeFile(filePath, &tomlconfig); err != nil {
+		panic(err)
+	}
+	fmt.Println(tomlconfig)
 
 }

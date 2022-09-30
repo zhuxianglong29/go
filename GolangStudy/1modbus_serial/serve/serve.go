@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sort"
 	_ "time"
 
 	"github.com/BurntSushi/toml"
@@ -59,9 +58,9 @@ var p mysql_port
 @retvar 无
 */
 //插入
-func (p mysql_port) insertsql(a string, b uint16) error {
-	str := "insert into testdata1(mark,data) values (?,?)"
-	_, err := tx.Exec(str, a, b)
+func (p mysql_port) insertsql(b string) error {
+	str := "insert into testdata2(data) values (?)"
+	_, err := tx.Exec(str, b)
 	return err
 }
 
@@ -153,7 +152,7 @@ mysql_transaction函数
 @param
 @retvar 无
 */
-func mysql_transaction(a string, b uint16) {
+func mysql_transaction(a string) {
 	//time.Sleep(time.Second * 60)//超时推出测试
 	// dsn := "root:root(密码)@tcp(127.0.0.1:3306（连接地址)）/go_db（数据库名）?charset=utf8mb4&parseTime=True"
 	dsn := fmt.Sprint(user, ":", passkey, "@tcp(", mysql_addr, ")/", database_name, "?charset=utf8mb4")
@@ -189,14 +188,17 @@ func mysql_transaction(a string, b uint16) {
 	// 	logrus.Panic("err2: %v\n", err2)
 	// }
 	// logrus.Info("i2: %v\n", i2)
-	err_part := p.insertsql(a, b)
+	logrus.Infof("insert a=%v %T", a, a)
+	err_part := p.insertsql(a)
 	if err_part != nil {
 		tx.Rollback()
 	}
 	err = tx.Commit()
 	if err != nil {
-		logrus.Panic("提交错误，需要回滚！")
 		tx.Rollback()
+		logrus.Panic("提交错误，需要回滚！")
+		//logrus.Info("提交错误，需要回滚！")
+
 	}
 	logrus.Info("transaction success")
 
@@ -226,17 +228,19 @@ func myserve(server_listen_port string) {
 
 // products路由对应函数
 func ProductsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	w.WriteHeader(http.StatusOK)
 	logrus.Info(w, "%s", "products")
 	b, _ := io.ReadAll(r.Body)
-	logrus.Info(string(b))
+	logrus.Info("b=", string(b))
 	//json转map
-	var cmd map[string]uint16
+	var cmd []uint16
 	err := json.Unmarshal(b, &cmd)
 	if err != nil {
 		logrus.Panic("unmasharl err=", err)
 	}
 	logrus.Info("cmd=", cmd)
+	a := fmt.Sprint(cmd)
 
 	// //上传mysql
 	// //从配置文件读参数
@@ -246,15 +250,9 @@ func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 	// mysql_addr := config.Get("server.mysql_addr").(string)
 	// database_name := config.Get("server.database_name").(string)
 	//按顺序读map
-	keys := []string{}
-	for key := range cmd {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		mysql_transaction(string(key), cmd[key])
-		//insertsql(string(key), cmd[key])
-	}
+
+	mysql_transaction(a)
+	//insertsql(string(key), cmd[key])
 }
 
 // func UserHandler(w http.ResponseWriter, r *http.Request) {
@@ -279,7 +277,7 @@ func main() {
 	server_listen_port = tomlconfig.Server.Server_listen_port
 	//日志打印到文件和命令行
 	Stdout_writer := os.Stdout
-	log_writer, err := os.OpenFile("serverlog.txt", os.O_WRONLY|os.O_CREATE, 0755) //os.O_APPEND设置为打开文件
+	log_writer, err := os.OpenFile("serverlog.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755) //os.O_APPEND设置为打开文件
 	if err != nil {
 		logrus.Panic("create file log.txt failed: %v", err)
 	}

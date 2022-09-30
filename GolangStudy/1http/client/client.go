@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -103,7 +104,21 @@ func myclient(httpserver_host string, httpserver_port string, in <-chan []byte) 
 		//url := httpserver_host + ":" + httpserver_port + "/products/"
 		url := fmt.Sprint(httpserver_host, ":", httpserver_port, "/products/")
 		contentType := "application/json"
-		client := http.Client{Timeout: 5 * time.Second}
+		//client := http.Client{Timeout: 5 * time.Second}
+		client := &http.Client{
+			Timeout: time.Second * 10,
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+					DualStack: true,
+				}).DialContext,
+				MaxIdleConns:          1000,
+				IdleConnTimeout:       90 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 10 * time.Second,
+			},
+		}
 		resp, err := client.Post(url, contentType, bytes.NewBuffer(json_datemodbus))
 
 		if err != nil {
@@ -142,10 +157,21 @@ func main() {
 	}
 	logrus.SetOutput(io.MultiWriter(Stdout_writer, log_writer))
 
-	c := make(chan []byte)
-	go mbus(modbustcp_host, modbustcp_port, c)
-	go myclient(httpserver_host, httpserver_port, c)
+	for i := 0; i < 1000; i++ {
 
+		i := make(chan []byte)
+		go mbus(modbustcp_host, modbustcp_port, i)
+		go myclient(httpserver_host, httpserver_port, i)
+	}
+	// i := make(chan []byte)
+	// go mbus(modbustcp_host, modbustcp_port, i)
+	// go myclient(httpserver_host, httpserver_port, i)
+	// a := make(chan []byte)
+	// go mbus(modbustcp_host, modbustcp_port, a)
+	// go myclient(httpserver_host, httpserver_port, a)
+	// b := make(chan []byte)
+	// go mbus(modbustcp_host, modbustcp_port, b)
+	// go myclient(httpserver_host, httpserver_port, b)
 	//ctrl+c退出
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt)
