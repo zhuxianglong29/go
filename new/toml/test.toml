@@ -1,7 +1,0 @@
-os="windows"
-version="10"
-[server]
-addr="192.168.1.1"
-port="80"
-http="https"
-route="/test/indes"
