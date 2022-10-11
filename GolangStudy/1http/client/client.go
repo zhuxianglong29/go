@@ -53,6 +53,7 @@ func mbus(modbustcp_host string, modbustcp_port string, out chan<- []byte) {
 
 	//p := modbus.NewTCPClientProvider(modbustcp_slave+modbustcp_port, modbus.WithEnableLogger())
 	p := modbus.NewTCPClientProvider(fmt.Sprint(modbustcp_host, modbustcp_port), modbus.WithEnableLogger())
+	fmt.Println(fmt.Sprint(modbustcp_host, modbustcp_port))
 	client := modbus.NewClient(p)
 	err := client.Connect()
 	if err != nil {
@@ -157,12 +158,10 @@ func main() {
 	}
 	logrus.SetOutput(io.MultiWriter(Stdout_writer, log_writer))
 
-	for i := 0; i < 1000; i++ {
+	i := make(chan []byte)
+	go mbus(modbustcp_host, modbustcp_port, i)
+	go myclient(httpserver_host, httpserver_port, i)
 
-		i := make(chan []byte)
-		go mbus(modbustcp_host, modbustcp_port, i)
-		go myclient(httpserver_host, httpserver_port, i)
-	}
 	// i := make(chan []byte)
 	// go mbus(modbustcp_host, modbustcp_port, i)
 	// go myclient(httpserver_host, httpserver_port, i)

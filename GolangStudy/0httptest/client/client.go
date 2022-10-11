@@ -134,7 +134,7 @@ func main() {
 	}
 	logrus.SetOutput(io.MultiWriter(Stdout_writer, log_writer))
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 200; i++ {
 
 		i := make(chan []byte)
 

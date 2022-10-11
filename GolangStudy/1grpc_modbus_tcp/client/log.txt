@@ -1,0 +1,4 @@
+time="2022-10-10T14:35:47+08:00" level=info msg="modbus starting"
+time="2022-10-10T14:35:47+08:00" level=info msg="a=[1 2 3 4 5]  []uint16"
+time="2022-10-10T14:35:47+08:00" level=info msg="datamodbus %v\r\n[1 2 3 4 5]"
+time="2022-10-10T14:37:12+08:00" level=info msg="sigal return=interrupt"
