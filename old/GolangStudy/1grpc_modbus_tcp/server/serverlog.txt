@@ -1,0 +1,4 @@
+time="2022-10-10T14:35:47+08:00" level=info msg="连接成功"
+time="2022-10-10T14:35:47+08:00" level=info msg="insert a=[1 2 3 4 5] string"
+time="2022-10-10T14:35:47+08:00" level=info msg="transaction success"
+time="2022-10-10T14:37:11+08:00" level=info msg="sigal return= interrupt"
