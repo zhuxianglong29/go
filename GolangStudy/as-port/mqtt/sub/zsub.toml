@@ -1,0 +1,9 @@
+os = "windows"
+version="0"
+[local]                 #串口地址
+addr="127.0.0.1"
+port="8888"
+
+[remote]                #mqtt地址
+mqttaddr="192.168.10.103"
+mqttport="1883"
